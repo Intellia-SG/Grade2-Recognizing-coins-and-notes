@@ -604,7 +604,7 @@ function Station3({ audioEnabled, onComplete }) {
         <div style={{ marginTop: 24, animation: 'bounceIn 0.5s' }}>
           {round < 1 ? (
             <button className="btn btn-outline" onClick={() => setRound(r => r + 1)}>
-              Play Next Level →
+              Practice Next Level →
             </button>
           ) : (
             <button className="btn btn-primary btn-lg" onClick={() => { stopNarration(); onComplete(); }}>

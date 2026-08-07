@@ -2,6 +2,21 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { narrate, stopNarration, preloadNarration } from '../utils/audio';
 import { getStoryNarration } from '../utils/narration';
 
+function FormattedText({ text }) {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={i} style={{ color: 'var(--gold)', fontWeight: 900 }}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      })}
+    </>
+  );
+}
+
 const STORY_SLIDES = [
   {
     image: '/images/m1.png',
@@ -22,9 +37,9 @@ const STORY_SLIDES = [
     fallbackIcon: '🦉',
     fallbackLabel: 'The Treasury Adventurers',
     slideNum: 2,
-    title: 'The Treasury Adventurers',
-    text: 'Professor Moneybag, the wise owl guardian, recruits Emma, Liam, Sophia, Mike, Sarah, and John as Treasury Adventurers to find the lost money.',
-    highlight: 'Emma, Liam, Sophia, Mike, Sarah, and John are chosen to recover the lost currency.',
+    title: 'The Treasury Adventurer',
+    text: 'Professor Moneybag, the wise owl guardian, recruits **Wei Ming** as the Master Treasury Adventurer to find the lost money.',
+    highlight: '**Wei Ming** is chosen to explore the magical lands and recover the lost currency.',
     mascotText: 'We need your help to explore the lands and learn their secrets! 🦉',
   },
   {
@@ -35,8 +50,8 @@ const STORY_SLIDES = [
     fallbackLabel: 'The Coin Forest',
     slideNum: 3,
     title: 'World 1 — The Coin Forest',
-    text: 'First, Emma heads into the sparkling Coin Forest, where shiny coins grow on magical trees and glow in streams. We must identify each coin!',
-    highlight: 'We will learn to identify and sort coins by their size, color, and name.',
+    text: 'First, **Wei Ming** heads into the sparkling Coin Forest, where shiny coins grow on magical trees and glow in streams.',
+    highlight: 'We will learn to identify and sort coins by their **size, color, and name**.',
     mascotText: 'Look closely at the details on each coin! 🌲',
   },
   {
@@ -47,9 +62,9 @@ const STORY_SLIDES = [
     fallbackLabel: 'The Silver River',
     slideNum: 4,
     title: 'World 2 — The Silver River',
-    text: 'Next, Liam travels to the Silver River. Here, coins float downstream, and bridges of different heights represent their values.',
-    highlight: "Remember, a larger physical size doesn't always mean greater value!",
-    mascotText: 'We will learn to compare coin values and order them from least to greatest. 🌊',
+    text: 'Next, **Wei Ming** travels to the Silver River. Here, coins float downstream, and bridges represent their values.',
+    highlight: 'Remember: a **larger physical size** does not always mean greater value!',
+    mascotText: 'We will learn to compare coin values and order them from **least to greatest**. 🌊',
   },
   {
     image: '/images/m5.png',
@@ -59,8 +74,8 @@ const STORY_SLIDES = [
     fallbackLabel: 'The Note Castle',
     slideNum: 5,
     title: 'World 3 — The Note Castle',
-    text: 'In Note Castle, Sophia discovers grand rooms decorated with colorful banknotes. We must learn about paper bills like one-dollar and five-dollar notes!',
-    highlight: 'We will recognize dollar bills and compare their values to coins.',
+    text: 'In Note Castle, **Wei Ming** discovers grand rooms decorated with colorful banknotes like **$1 and $5 notes**.',
+    highlight: 'We will recognize **dollar bills** and compare their values to coins.',
     mascotText: 'Look at the portraits and bright colors on the notes! 🏰',
   },
   {
@@ -71,9 +86,9 @@ const STORY_SLIDES = [
     fallbackLabel: 'The Treasure Bank',
     slideNum: 6,
     title: 'World 4 — The Treasure Bank',
-    text: 'At the Treasure Bank, Mike and Banker Reginald load conveyor belts with coins and notes. We will practice skip-counting to count large collections.',
-    highlight: 'We will count mixed collections of coins and notes quickly and accurately.',
-    mascotText: 'Skip-counting by fives and tens makes counting money super fast! 🏦',
+    text: 'At the Treasure Bank, **Wei Ming** and Banker Reginald load conveyor belts with coins and notes.',
+    highlight: 'We will practice **skip-counting** to count large collections of money quickly and accurately.',
+    mascotText: 'Skip-counting by **fives and tens** makes counting money super fast! 🏦',
   },
   {
     image: '/images/m7.png',
@@ -83,7 +98,7 @@ const STORY_SLIDES = [
     fallbackLabel: 'The Market Square',
     slideNum: 7,
     title: 'World 5 — The Market Square',
-    text: 'At the Market Square, Sarah meets friendly shopkeepers. We will use a virtual wallet to pay the exact amount for delicious bread, toys, and flowers.',
+    text: 'At the Market Square, **Wei Ming** meets friendly shopkeepers and uses a virtual wallet to pay exact amounts.',
     highlight: 'We will read price tags and choose the right money to make purchases.',
     mascotText: 'Shopping is where our money skills become real-world power! 🛒',
   },
@@ -95,8 +110,8 @@ const STORY_SLIDES = [
     fallbackLabel: 'The Royal Bazaar',
     slideNum: 8,
     title: 'World 6 — The Royal Bazaar',
-    text: 'Finally, John challenges the Treasury Guardian, Crystal the Dragon. Solve the ultimate counting and shopping puzzles to unlock the Royal Treasury!',
-    highlight: 'Restore all lost money to the Royal Treasury and become a Master Treasurer!',
+    text: 'Finally, **Wei Ming** challenges the Treasury Guardian, Crystal the Dragon, with ultimate money puzzles!',
+    highlight: 'Restore all lost money to the Royal Treasury and become a **Master Treasurer**!',
     mascotText: "Let's complete our quest and restore prosperity to the kingdom! 👑",
   },
 ];
@@ -216,10 +231,7 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
             <div className="story-image-placeholder">
               <div className="story-placeholder-icon">{s.fallbackIcon}</div>
               <div className="story-placeholder-label" style={{ color: s.accentColor }}>
-                {imgError ? '🖼️ Image: ' + s.fallbackLabel : '⏳ Loading image…'}
-              </div>
-              <div className="story-placeholder-hint">
-                {imgError ? `Place money_art_${s.slideNum}.png in /public/images/` : ''}
+                {imgError ? '🖼️ ' + s.fallbackLabel : '⏳ Loading image…'}
               </div>
               {/* Decorative line */}
               <div className="story-symmetry-line" style={{ background: s.accentColor }} />
@@ -249,7 +261,7 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
                 transition: 'opacity 0.5s ease, transform 0.5s ease',
               }}
             >
-              {s.text}
+              <FormattedText text={s.text} />
             </p>
           </div>
 
@@ -260,19 +272,21 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
               opacity: hlVisible ? 1 : 0,
               transform: hlVisible ? 'translateY(0)' : 'translateY(10px)',
               transition: 'opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s',
-              borderColor: s.accentColor + '55',
-              background: s.accentColor + '14',
+              borderColor: s.accentColor + '88',
+              background: s.accentColor + '20',
             }}
           >
             <span className="story-highlight-star">✨</span>
-            <span className="story-highlight-text">{s.highlight}</span>
+            <span className="story-highlight-text">
+              <FormattedText text={s.highlight} />
+            </span>
           </div>
 
           {/* Mascot speech */}
           <div className="story-mascot-row">
             <div className="story-mascot-avatar">🦉</div>
-            <div className="story-mascot-bubble" style={{ color: '#0f172a' }}>
-              {s.mascotText}
+            <div className="story-mascot-bubble">
+              <FormattedText text={s.mascotText} />
             </div>
           </div>
         </div>

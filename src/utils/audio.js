@@ -1,9 +1,8 @@
 // ──────────────────────────────────────────────────
-// Offline Audio Narration Engine — Treasure Market Adventure (Coins & Notes)
-// Plays pre-generated MP3s.
+// Audio & Voice Narration Engine — Treasure Market Adventure
+// Plays pre-generated MP3s with Web Speech API fallback for dynamic questions & hints
 // ──────────────────────────────────────────────────
 
-// Static import — map is immediately available on first speak() call
 import { audioMap } from './audioMap.js';
 
 let currentQueue = null;
@@ -11,53 +10,108 @@ let isSpeaking   = false;
 let currentAudio = null;
 let playId       = 0;
 
-// ─── Core speak — offline MP3 only ──────────────
+const synthesis = typeof window !== 'undefined' && 'speechSynthesis' in window ? window.speechSynthesis : null;
+
+// Clean text for speech (remove markdown bolding and emojis)
+function sanitizeText(text) {
+  if (!text) return '';
+  return text
+    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+    .replace(/\*/g, '')
+    .replace(/¢/g, ' cents')
+    .replace(/\$/g, ' dollars ')
+    .trim();
+}
+
+// Helper to find a friendly English voice for SpeechSynthesis
+function getBestVoice() {
+  if (!synthesis) return null;
+  const voices = synthesis.getVoices();
+  return (
+    voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Zira'))) ||
+    voices.find(v => v.lang.startsWith('en')) ||
+    voices[0] ||
+    null
+  );
+}
+
+function speakWithSynthesis(cleanText, currentPlayId, resolve) {
+  if (!synthesis || !cleanText) {
+    isSpeaking = false;
+    resolve();
+    return;
+  }
+
+  try {
+    synthesis.cancel(); // Stop any pending synthesis
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.05;
+    
+    const voice = getBestVoice();
+    if (voice) utterance.voice = voice;
+
+    utterance.onend = () => {
+      if (playId === currentPlayId) isSpeaking = false;
+      resolve();
+    };
+
+    utterance.onerror = () => {
+      if (playId === currentPlayId) isSpeaking = false;
+      resolve();
+    };
+
+    synthesis.speak(utterance);
+  } catch (e) {
+    if (playId === currentPlayId) isSpeaking = false;
+    resolve();
+  }
+}
+
+// ─── Core speak — Offline MP3 with Web Speech Fallback ──────────────
 export function speak(text, enabled = true) {
-  return new Promise(async (resolve) => {
-    if (!enabled || !text?.trim()) { resolve(); return; }
+  return new Promise((resolve) => {
+    if (!enabled || !text?.trim()) {
+      resolve();
+      return;
+    }
 
     playId++;
     const currentPlayId = playId;
     isSpeaking = true;
 
-    const offlinePath = audioMap[text];
-
-    if (!offlinePath) {
-      // No MP3 for this phrase — skip silently
-      isSpeaking = false;
-      resolve();
-      return;
-    }
-
-    // Stop any currently playing audio
+    // Stop current MP3 & Synthesis
     if (currentAudio) {
       currentAudio.pause();
       currentAudio.currentTime = 0;
       currentAudio = null;
     }
+    if (synthesis && synthesis.speaking) {
+      synthesis.cancel();
+    }
 
-    const audio = new Audio(offlinePath);
-    currentAudio = audio;
+    const clean = sanitizeText(text);
+    const offlinePath = audioMap[text] || audioMap[clean];
 
-    audio.onended = () => {
-      if (playId === currentPlayId) isSpeaking = false;
-      resolve();
-    };
+    if (offlinePath) {
+      const audio = new Audio(offlinePath);
+      currentAudio = audio;
 
-    audio.onerror = () => {
-      // File missing — skip silently
-      console.warn(`Offline audio missing for: "${text}"`);
-      if (playId === currentPlayId) isSpeaking = false;
-      resolve();
-    };
+      audio.onended = () => {
+        if (playId === currentPlayId) isSpeaking = false;
+        resolve();
+      };
 
-    try {
-      if (currentPlayId !== playId) { isSpeaking = false; resolve(); return; }
-      await audio.play();
-    } catch (e) {
-      // Autoplay blocked or other error — skip silently
-      if (playId === currentPlayId) isSpeaking = false;
-      resolve();
+      audio.onerror = () => {
+        // Fallback to synthesis if file missing or fails
+        speakWithSynthesis(clean, currentPlayId, resolve);
+      };
+
+      audio.play().catch(() => {
+        speakWithSynthesis(clean, currentPlayId, resolve);
+      });
+    } else {
+      speakWithSynthesis(clean, currentPlayId, resolve);
     }
   });
 }
@@ -98,6 +152,7 @@ export function narrate(segments, enabled = true) {
     cancelled = true;
     if (currentQueue === queueId) {
       if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+      if (synthesis && synthesis.speaking) { synthesis.cancel(); }
       isSpeaking   = false;
       currentQueue = null;
     }
@@ -111,7 +166,7 @@ export function narrate(segments, enabled = true) {
       if (cancelled || currentQueue !== queueId) return;
 
       if (segment.text?.trim()) {
-        await speak(segment.text, true);
+        await speak(segment.text, enabled);
       }
 
       if (segment.pause > 0 && !cancelled && currentQueue === queueId) {
@@ -127,7 +182,14 @@ export function narrate(segments, enabled = true) {
 export function stopNarration() {
   playId++;
   currentQueue = null;
-  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+  if (synthesis && synthesis.speaking) {
+    synthesis.cancel();
+  }
   isSpeaking = false;
 }
 
@@ -165,3 +227,4 @@ export const sounds = {
 export async function getAudioUrl(text) {
   return audioMap[text] || null;
 }
+

@@ -13,6 +13,7 @@ const PHASES = ['intro', 'wonder', 'story', 'simulate', 'play', 'reflect'];
 export default function App() {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [homeConfirmModal, setHomeConfirmModal] = useState(false);
   const [sessionData, setSessionData] = useState({
     score: 0,
     xp: 0,
@@ -23,18 +24,32 @@ export default function App() {
 
   const activePhase = PHASES[phaseIndex];
 
-  // Stop narration on phase transition
+  // Stop narration when switching phases
   useEffect(() => {
     stopNarration();
   }, [phaseIndex]);
 
   const handleToggleAudio = useCallback(() => {
     sounds.click();
-    setAudioEnabled(e => !e);
+    setAudioEnabled(e => {
+      const next = !e;
+      if (!next) stopNarration();
+      return next;
+    });
   }, []);
 
-  const handleHome = useCallback(() => {
+  const handleHomeClick = useCallback(() => {
     sounds.click();
+    if (phaseIndex > 0 && phaseIndex < PHASES.length - 1) {
+      setHomeConfirmModal(true);
+    } else {
+      setPhaseIndex(0);
+    }
+  }, [phaseIndex]);
+
+  const confirmHome = useCallback(() => {
+    stopNarration();
+    setHomeConfirmModal(false);
     setPhaseIndex(0);
     setSessionData({
       score: 0,
@@ -69,24 +84,24 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Interactive geometric background element */}
+      {/* Interactive background particle element */}
       <FloatingNumbers />
 
-      {/* Top Header / Control HUD */}
+      {/* Top Header Controls */}
       <div className="top-controls">
         {phaseIndex > 0 ? (
-          <button className="home-btn" onClick={handleHome} title="Go Home">
+          <button className="home-btn" onClick={handleHomeClick} title="Return Home">
             🏠
           </button>
         ) : (
-          <div style={{ width: 44 }} />
+          <div style={{ width: 50 }} />
         )}
 
-        {/* Phase Indicator Navigation (matches original Equal platform HUD) */}
-        {phaseIndex > 0 && phaseIndex < 5 && (
+        {/* Phase Indicator Navigation Bar */}
+        {phaseIndex > 0 && phaseIndex <= 5 && (
           <div className="journey-bar">
-            {['Wonder', 'Story', 'Simulate', 'Play'].map((label, idx) => {
-              const stepNum = idx + 1; // 1-indexed for wonder/story/simulate/play
+            {['Wonder', 'Story', 'Simulate', 'Practice', 'Reflect'].map((label, idx) => {
+              const stepNum = idx + 1;
               const active = phaseIndex === stepNum;
               const completed = phaseIndex > stepNum;
               return (
@@ -95,15 +110,21 @@ export default function App() {
                     <span>{completed ? '✓' : stepNum}</span>
                     <span>{label}</span>
                   </div>
-                  {idx < 3 && <span className="journey-divider">/</span>}
+                  {idx < 4 && <span className="journey-divider">/</span>}
                 </div>
               );
             })}
           </div>
         )}
 
-        <button className="audio-toggle-btn" onClick={handleToggleAudio} title="Toggle Speech Narration">
-          {audioEnabled ? '🔊 ON' : '🔇 OFF'}
+        {/* Circular Gold Audio Toggle Button (Positioned near inner container) */}
+        <button
+          className={`audio-toggle-btn ${audioEnabled ? 'sound-on' : 'sound-off'}`}
+          onClick={handleToggleAudio}
+          title={audioEnabled ? "Mute Narration" : "Unmute Narration"}
+          aria-label="Toggle Audio Narration"
+        >
+          <span className="audio-icon">{audioEnabled ? '🔊' : '🔇'}</span>
         </button>
       </div>
 
@@ -147,6 +168,27 @@ export default function App() {
           />
         )}
       </div>
+
+      {/* Exit Confirmation Modal */}
+      {homeConfirmModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🏠</div>
+            <h3 style={{ color: 'var(--coral)', marginBottom: 8 }}>Return to Main Menu?</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 20, fontSize: '0.9rem' }}>
+              Are you sure you want to return home? Your current journey progress will be reset.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-outline" onClick={() => setHomeConfirmModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={confirmHome} style={{ background: 'var(--coral)' }}>
+                Yes, Go Home
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

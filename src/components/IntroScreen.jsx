@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react';
 import { narrate, stopNarration } from '../utils/audio';
 import { introNarration } from '../utils/narration';
 
-const JOURNEY_PHASES = [
-  { icon: '🔍', label: 'Wonder', desc: 'A money mystery!' },
-  { icon: '📖', label: 'Story', desc: 'Find the lost coins' },
-  { icon: '🧪', label: 'Simulate', desc: 'Inspect & count cash' },
-  { icon: '🎮', label: 'Play', desc: 'Six gamified worlds' },
-  { icon: '📓', label: 'Reflect', desc: "Review what you've learned" },
+const JOURNEY_CARDS = [
+  { icon: '🤔', title: 'Wonder', sub: 'A money mystery!' },
+  { icon: '📖', title: 'Story', sub: 'Find the lost coins' },
+  { icon: '🧪', title: 'Simulate', sub: 'Inspect & count cash' },
+  { icon: '🎮', title: 'Practice', sub: '6 gamified worlds' },
+  { icon: '📓', title: 'Reflect', sub: 'Quiz & review' },
 ];
 
 export default function IntroScreen({ onStart, audioEnabled }) {
@@ -34,68 +34,47 @@ export default function IntroScreen({ onStart, audioEnabled }) {
 
   return (
     <div className="intro-screen">
-      {/* Curriculum badge */}
+      {/* Grade Badge */}
       <div className="intro-badge">
-        ✨  · Grade 2 Maths
+        ✨ Grade 2 Math
       </div>
 
-      {/* Title */}
+      {/* Main Glowing Title */}
       <h1 className="intro-title">
-        <span style={{ color: 'var(--green-light)' }}>Recognizing Coins and Notes</span>
+        Coins and Notes
       </h1>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginTop: 6, fontFamily: 'var(--font-display)' }}>
-        The Treasure Market Adventure · Grade 2 Maths
+
+      {/* Subtitle */}
+      <p className="intro-subtitle">
+        Recognizing, Comparing & Counting Money!
       </p>
 
-      {/* Mascot */}
-      <div className="mascot-container">
-        <div className="mascot">🦉</div>
-        <div className="speech-bubble">
-          Let's find the lost coins and restore the Royal Treasury! 🪙
-        </div>
+      {/* Intro Description Banner */}
+      <div className="intro-banner-box">
+        Let's help <strong style={{ color: 'var(--gold)' }}>Wei Ming</strong> master recognizing coins, dollar bills, comparing values, and counting money! 🪙
       </div>
 
-      {/* Description */}
-      <p className="intro-desc">
-        Help <strong style={{ color: 'var(--gold)' }}>Professor Moneybag</strong> and the Treasury Adventurers find the lost money scattered by a mysterious storm across six magical worlds!
-      </p>
-
-      {/* Journey map */}
-      <div className="intro-journey-map">
-        <h3 className="intro-journey-title">Your Learning Journey</h3>
-        <div className="intro-journey-steps">
-          {JOURNEY_PHASES.map((p, i) => (
-            <div key={i} className="intro-journey-step">
-              <div className="intro-journey-icon">{p.icon}</div>
-              <div className="intro-journey-info">
-                <div className="intro-journey-label">{p.label}</div>
-                <div className="intro-journey-desc">{p.desc}</div>
-              </div>
-              {i < JOURNEY_PHASES.length - 1 && <div className="intro-journey-arrow">→</div>}
-            </div>
-          ))}
-        </div>
+      {/* 5 Phase Cards Grid */}
+      <div className="intro-journey-grid">
+        {JOURNEY_CARDS.map((card, i) => (
+          <div key={i} className="journey-card">
+            <div className="journey-card-icon">{card.icon}</div>
+            <div className="journey-card-title">{card.title}</div>
+            <div className="journey-card-sub">{card.sub}</div>
+          </div>
+        ))}
       </div>
 
-      {/* CTA */}
-      <button className="btn btn-primary btn-lg intro-start-btn" onClick={handleStart} id="start-journey-btn">
+      {/* CTA Button */}
+      <button className="intro-start-btn" onClick={handleStart} id="start-journey-btn">
         🚀 Begin Your Journey!
       </button>
 
-      {/* Feature cards */}
-      <div className="feature-cards">
-        <div className="feature-card">
-          <div className="feature-card-icon">🗺️</div>
-          <div className="feature-card-label">6 Magical Worlds</div>
-        </div>
-        <div className="feature-card">
-          <div className="feature-card-icon">🪙</div>
-          <div className="feature-card-label">Coins & Notes</div>
-        </div>
-        <div className="feature-card">
-          <div className="feature-card-icon">✨</div>
-          <div className="feature-card-label">Badges & XP</div>
-        </div>
+      {/* Bottom Feature Tags */}
+      <div className="intro-tags-row">
+        <div className="tag-item">🎯 60 Questions</div>
+        <div className="tag-item">🪙 Coins & Notes</div>
+        <div className="tag-item">🏆 Badges & XP</div>
       </div>
     </div>
   );

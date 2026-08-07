@@ -10,7 +10,7 @@ export function introNarration() {
     cheer("Welcome to the Treasure Market Adventure!"),
     say("Today, we are going to learn about recognizing coins and paper notes."),
     ask("Can we identify their values and count them to buy treasures in the market?"),
-    cheer("Are you ready to join Emma, Liam, and the other adventurers? Let us get started!"),
+    cheer("Are you ready to join Wei Ming on this adventure? Let us get started!"),
   ];
 }
 
@@ -38,37 +38,37 @@ export function getStoryNarration(slideIndex) {
       ];
     case 1:
       return [
-        say("Professor Moneybag, the wise owl guardian, recruits Emma, Liam, Sophia, Mike, Sarah, and John as Treasury Adventurers to find the lost money."),
+        say("Professor Moneybag, the wise owl guardian, recruits Wei Ming as the Master Treasury Adventurer to find the lost money."),
         say("We need your help to explore the lands and learn their secrets!"),
       ];
     case 2:
       return [
-        say("First, Emma heads into the sparkling Coin Forest, where shiny coins grow on magical trees and glow in streams."),
+        say("First, Wei Ming heads into the sparkling Coin Forest, where shiny coins grow on magical trees and glow in streams."),
         emphasize("We will learn to identify and sort coins by their size, color, and name."),
       ];
     case 3:
       return [
-        say("Next, Liam travels to the Silver River. Here, coins float downstream, and bridges of different heights represent their values."),
+        say("Next, Wei Ming travels to the Silver River. Here, coins float downstream, and bridges of different heights represent their values."),
         emphasize("We will learn to compare coin values and order them from least to greatest."),
       ];
     case 4:
       return [
-        say("In Note Castle, Sophia discovers grand rooms decorated with colorful banknotes."),
+        say("In Note Castle, Wei Ming discovers grand rooms decorated with colorful banknotes."),
         emphasize("We will recognize dollar bills like one-dollar and five-dollar notes and compare their values to coins."),
       ];
     case 5:
       return [
-        say("At the Treasure Bank, Mike and Banker Reginald load conveyor belts with coins and notes."),
+        say("At the Treasure Bank, Wei Ming and Banker Reginald load conveyor belts with coins and notes."),
         emphasize("We will practice skip-counting to count large collections of money quickly and accurately."),
       ];
     case 6:
       return [
-        say("At the Market Square, Sarah meets friendly shopkeepers."),
+        say("At the Market Square, Wei Ming meets friendly shopkeepers."),
         emphasize("We will use our virtual wallet to pay the exact amount for delicious bread, toys, and flowers."),
       ];
     case 7:
       return [
-        cheer("Finally, John challenges the Treasury Guardian, Crystal the Dragon."),
+        cheer("Finally, Wei Ming challenges the Treasury Guardian, Crystal the Dragon."),
         say("Solve the ultimate counting and shopping puzzles to unlock the Royal Treasury!"),
         say("Let's restore all lost money and become a Master Treasurer!"),
       ];
