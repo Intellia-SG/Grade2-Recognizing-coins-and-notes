@@ -57,5 +57,14 @@ export const audioMap = {
   "Almost! Let's think about coin values and bills.": "/assets/audio/money_audio_almost__let_s_think_about_coin_values_and_bills__54.mp3",
   "How confident do you feel about recognizing and counting money?": "/assets/audio/money_audio_how_confident_do_you_feel_about_recognizing_and_co_55.mp3",
   "Quest complete!": "/assets/audio/money_audio_quest_complete__56.mp3",
-  "Let us check your final score on the certificate.": "/assets/audio/money_audio_let_us_check_your_final_score_on_the_certificate__57.mp3"
+  "Let us check your final score on the certificate.": "/assets/audio/money_audio_let_us_check_your_final_score_on_the_certificate__57.mp3",
+  // Wei Ming narrative aliases for seamless MP3 playback
+  "Are you ready to join Wei Ming on this adventure? Let us get started!": "/assets/audio/money_audio_are_you_ready_to_join_emma__liam__and_the_other_ad_3.mp3",
+  "Professor Moneybag, the wise owl guardian, recruits Wei Ming as the Master Treasury Adventurer to find the lost money.": "/assets/audio/money_audio_professor_moneybag__the_wise_owl_guardian__recruit_15.mp3",
+  "First, Wei Ming heads into the sparkling Coin Forest, where shiny coins grow on magical trees and glow in streams.": "/assets/audio/money_audio_first__emma_heads_into_the_sparkling_coin_forest___17.mp3",
+  "Next, Wei Ming travels to the Silver River. Here, coins float downstream, and bridges of different heights represent their values.": "/assets/audio/money_audio_next__liam_travels_to_the_silver_river__here__coin_19.mp3",
+  "In Note Castle, Wei Ming discovers grand rooms decorated with colorful banknotes.": "/assets/audio/money_audio_in_note_castle__sophia_discovers_grand_rooms_decor_21.mp3",
+  "At the Treasure Bank, Wei Ming and Banker Reginald load conveyor belts with coins and notes.": "/assets/audio/money_audio_at_the_treasure_bank__mike_and_banker_reginald_loa_23.mp3",
+  "At the Market Square, Wei Ming meets friendly shopkeepers.": "/assets/audio/money_audio_at_the_market_square__sarah_meets_friendly_shopkee_25.mp3",
+  "Finally, Wei Ming challenges the Treasury Guardian, Crystal the Dragon.": "/assets/audio/money_audio_finally__john_challenges_the_treasury_guardian__cr_27.mp3"
 };

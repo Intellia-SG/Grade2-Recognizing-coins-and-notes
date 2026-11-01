@@ -1,6 +1,6 @@
 // ──────────────────────────────────────────────────
 // Audio & Voice Narration Engine — Treasure Market Adventure
-// Plays pre-generated MP3s with Web Speech API fallback for dynamic questions & hints
+// Plays pre-generated MP3s only (offline audio) — fallback / default voice removed
 // ──────────────────────────────────────────────────
 
 import { audioMap } from './audioMap.js';
@@ -10,65 +10,16 @@ let isSpeaking   = false;
 let currentAudio = null;
 let playId       = 0;
 
-const synthesis = typeof window !== 'undefined' && 'speechSynthesis' in window ? window.speechSynthesis : null;
-
-// Clean text for speech (remove markdown bolding and emojis)
-function sanitizeText(text) {
+// Clean text for map matching (remove markdown bolding and emojis)
+export function sanitizeText(text) {
   if (!text) return '';
   return text
-    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
-    .replace(/\*/g, '')
-    .replace(/¢/g, ' cents')
-    .replace(/\$/g, ' dollars ')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
+    .replace(/[*_`#]/g, '')
     .trim();
 }
 
-// Helper to find a friendly English voice for SpeechSynthesis
-function getBestVoice() {
-  if (!synthesis) return null;
-  const voices = synthesis.getVoices();
-  return (
-    voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Zira'))) ||
-    voices.find(v => v.lang.startsWith('en')) ||
-    voices[0] ||
-    null
-  );
-}
-
-function speakWithSynthesis(cleanText, currentPlayId, resolve) {
-  if (!synthesis || !cleanText) {
-    isSpeaking = false;
-    resolve();
-    return;
-  }
-
-  try {
-    synthesis.cancel(); // Stop any pending synthesis
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 0.95;
-    utterance.pitch = 1.05;
-    
-    const voice = getBestVoice();
-    if (voice) utterance.voice = voice;
-
-    utterance.onend = () => {
-      if (playId === currentPlayId) isSpeaking = false;
-      resolve();
-    };
-
-    utterance.onerror = () => {
-      if (playId === currentPlayId) isSpeaking = false;
-      resolve();
-    };
-
-    synthesis.speak(utterance);
-  } catch (e) {
-    if (playId === currentPlayId) isSpeaking = false;
-    resolve();
-  }
-}
-
-// ─── Core speak — Offline MP3 with Web Speech Fallback ──────────────
+// ─── Core speak — Offline MP3 Only ──────────────────
 export function speak(text, enabled = true) {
   return new Promise((resolve) => {
     if (!enabled || !text?.trim()) {
@@ -80,14 +31,20 @@ export function speak(text, enabled = true) {
     const currentPlayId = playId;
     isSpeaking = true;
 
-    // Stop current MP3 & Synthesis
+    // Stop and clean up any currently playing audio
     if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
+      try {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      } catch (e) { /* ignore */ }
       currentAudio = null;
     }
-    if (synthesis && synthesis.speaking) {
-      synthesis.cancel();
+
+    // Safety: cancel any residual browser speech synthesis if active
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.speaking) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) { /* ignore */ }
     }
 
     const clean = sanitizeText(text);
@@ -98,20 +55,33 @@ export function speak(text, enabled = true) {
       currentAudio = audio;
 
       audio.onended = () => {
-        if (playId === currentPlayId) isSpeaking = false;
+        if (playId === currentPlayId) {
+          isSpeaking = false;
+          currentAudio = null;
+        }
         resolve();
       };
 
       audio.onerror = () => {
-        // Fallback to synthesis if file missing or fails
-        speakWithSynthesis(clean, currentPlayId, resolve);
+        if (playId === currentPlayId) {
+          isSpeaking = false;
+          currentAudio = null;
+        }
+        resolve();
       };
 
       audio.play().catch(() => {
-        speakWithSynthesis(clean, currentPlayId, resolve);
+        // Intentionally stopped/aborted by slide navigation or autoplay — resolve cleanly without default voice
+        if (playId === currentPlayId) {
+          isSpeaking = false;
+          currentAudio = null;
+        }
+        resolve();
       });
     } else {
-      speakWithSynthesis(clean, currentPlayId, resolve);
+      // No MP3 found — resolve silently without triggering any default/fallback voice
+      if (playId === currentPlayId) isSpeaking = false;
+      resolve();
     }
   });
 }
@@ -134,7 +104,7 @@ export const pause     = (ms  = 0)         => seg('',  'statement',      ms);
 export function preloadNarration(segments) {
   if (!segments) return;
   segments.forEach(s => {
-    const path = s.text?.trim() && audioMap[s.text];
+    const path = s.text?.trim() && (audioMap[s.text] || audioMap[sanitizeText(s.text)]);
     if (path) {
       const a = new Audio(path);
       a.preload = 'auto';
@@ -151,8 +121,16 @@ export function narrate(segments, enabled = true) {
   const cancel = () => {
     cancelled = true;
     if (currentQueue === queueId) {
-      if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
-      if (synthesis && synthesis.speaking) { synthesis.cancel(); }
+      if (currentAudio) {
+        try {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+        } catch (e) { /* ignore */ }
+        currentAudio = null;
+      }
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+      }
       isSpeaking   = false;
       currentQueue = null;
     }
@@ -183,12 +161,16 @@ export function stopNarration() {
   playId++;
   currentQueue = null;
   if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.currentTime = 0;
+    try {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    } catch (e) { /* ignore */ }
     currentAudio = null;
   }
-  if (synthesis && synthesis.speaking) {
-    synthesis.cancel();
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {}
   }
   isSpeaking = false;
 }
@@ -225,6 +207,5 @@ export const sounds = {
 
 // Legacy compatibility
 export async function getAudioUrl(text) {
-  return audioMap[text] || null;
+  return audioMap[text] || audioMap[sanitizeText(text)] || null;
 }
-

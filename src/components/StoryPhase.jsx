@@ -139,26 +139,33 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
     }
   }, [slide, audioEnabled]);
 
-  // Reset state on slide change
+  // Reset state and trigger narration cleanly on slide change
   useEffect(() => {
+    narrationRef.current?.cancel();
+    stopNarration();
     setTextVisible(false);
     setHlVisible(false);
     setImgLoaded(false);
     setImgError(false);
 
-    const t1 = setTimeout(() => setTextVisible(true), 150);
-    const t2 = setTimeout(() => setHlVisible(true), 900);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [slide]);
+    const t1 = setTimeout(() => {
+      setTextVisible(true);
+      if (audioEnabled) {
+        narrationRef.current?.cancel();
+        stopNarration();
+        narrationRef.current = narrate(getStoryNarration(slide), true);
+      }
+    }, 200);
 
-  // Play narration when text becomes visible
-  useEffect(() => {
-    if (textVisible && audioEnabled) {
+    const t2 = setTimeout(() => setHlVisible(true), 900);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
       narrationRef.current?.cancel();
-      narrationRef.current = narrate(getStoryNarration(slide), true);
-    }
-    return () => { narrationRef.current?.cancel(); };
-  }, [textVisible, slide, audioEnabled]);
+      stopNarration();
+    };
+  }, [slide, audioEnabled]);
 
   const goNext = useCallback(() => {
     if (animating) return;
